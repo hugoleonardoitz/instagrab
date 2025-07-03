@@ -1,0 +1,59 @@
+# Byte-compiled / optimized / DLL files
+
+**pycache**/
+\*.py\[cod]
+\*\$py.class
+
+# Virtual environments
+
+venv\_instagrab/
+venv/
+env/
+.env/
+
+# SQLite database
+
+instagrab.db
+
+# Logs
+
+instagrab.log
+
+# Exported data
+
+data.json
+
+# Python coverage
+
+htmlcov/
+.coverage
+
+# Distribution / packaging
+
+build/
+dist/
+\*.egg-info/
+
+# IDE and editor folders
+
+.vscode/
+.idea/
+
+# macOS
+
+.DS\_Store
+
+# npm / Node.js (if used)
+
+node\_modules/
+npm-debug.log\*
+
+# dotenv environment variables file
+
+.env\*
+
+# diretório de downloads e urls
+downloads/
+downloads\
+urls/
+urls\

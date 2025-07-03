@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Instagrab - Posts Baixados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
+    <!-- Header -->
+    <header class="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-800">
+        <h1 class="text-2xl font-semibold">Posts Baixados</h1>
+        <div class="flex items-center space-x-3">
+            <span id="summary" class="text-sm">Total de posts: <strong id="total-posts">0</strong></span>
+            <button id="theme-toggle" class="p-2 rounded bg-gray-200 dark:bg-gray-700 focus:outline-none">🌙</button>
+            <button id="menu-toggle" class="p-2 rounded bg-gray-200 dark:bg-gray-700 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+        class="fixed top-0 right-0 h-full w-64 bg-gray-100 dark:bg-gray-800 transform translate-x-full transition-transform duration-300">
+        <div class="flex justify-end p-4">
+            <button id="menu-close" class="p-2 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600 dark:text-gray-300" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <nav class="space-y-2 px-4">
+            <button id="sobre-btn"
+                class="w-full text-left p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700">Sobre</button>
+            <button id="ajuda-btn"
+                class="w-full text-left p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700">Ajuda</button>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="p-4">
+        <!-- Search -->
+        <div class="flex mb-4 space-x-2">
+            <input id="search-input" type="text" placeholder="Digite algo para pesquisar..."
+                class="flex-1 p-2 border rounded focus:outline-none focus:ring focus:border-blue-300 dark:bg-gray-700 dark:border-gray-600" />
+            <button id="search-btn" class="px-4 bg-blue-600 text-white rounded hover:bg-blue-700">Pesquisar</button>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-auto rounded shadow bg-white dark:bg-gray-800">
+            <table id="posts-table" class="min-w-full table-auto">
+                <thead class="bg-gray-200 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-4 py-2">Perfil</th>
+                        <th class="px-4 py-2">Shortcode</th>
+                        <th class="px-4 py-2">Descrição</th>
+                        <th class="px-4 py-2">Status</th>
+                        <th class="px-4 py-2">Hashtags</th>
+                        <th class="px-4 py-2">Criado Em</th>
+                        <th class="px-4 py-2">Atualizado Em</th>
+                        <th class="px-4 py-2">URL</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+            </table>
+        </div>
+
+        <!-- Footer / Pagination -->
+        <div class="flex items-center justify-between mt-4">
+            <div class="flex items-center space-x-2">
+                <label class="text-sm" for="entries">Exibir</label>
+                <select id="entries" class="p-1 border rounded dark:bg-gray-700">
+                    <option>10</option>
+                    <option>25</option>
+                    <option>50</option>
+                    <option>100</option>
+                </select>
+                <span class="text-sm">entradas</span>
+            </div>
+            <div id="pagination" class="space-x-1"></div>
+        </div>
+    </main>
+
+    <!-- Modais -->
+    <div id="sobre-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded p-6 w-80 relative">
+            <button id="sobre-close" class="absolute top-2 right-2 text-xl focus:outline-none">✕</button>
+            <h2 class="text-xl font-semibold mb-2">Sobre</h2>
+            <p>Autor: Hugo Leonardo<br>Versão: 1.0<br>Projeto Instagrab</p>
+        </div>
+    </div>
+    <div id="ajuda-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded p-6 w-80 relative">
+            <button id="ajuda-close" class="absolute top-2 right-2 text-xl focus:outline-none">✕</button>
+            <h2 class="text-xl font-semibold mb-2">Ajuda</h2>
+            <ol class="list-decimal list-inside">
+                <li>Execute <code>instagrab.py</code> para gerar o banco e <code>data.json</code>.</li>
+                <li>Sirva via HTTP (e.g., <code>python -m http.server</code>).</li>
+                <li>Use a busca para filtrar.</li>
+                <li>Botões Acessar e Copiar na coluna URL.</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script>
+        // Theme toggle
+        $('#theme-toggle').on('click', () => {
+            $('html').toggleClass('dark');
+            $('#theme-toggle').text($('html').hasClass('dark') ? '☀️' : '🌙');
+        });
+        // Sidebar toggle
+        $('#menu-toggle').on('click', () => $('#sidebar').removeClass('translate-x-full'));
+        $('#menu-close').on('click', () => $('#sidebar').addClass('translate-x-full'));
+        // Modals
+        $('#sobre-btn').on('click', () => $('#sobre-modal').removeClass('hidden'));
+        $('#ajuda-btn').on('click', () => $('#ajuda-modal').removeClass('hidden'));
+        $('#sobre-close, #ajuda-close').on('click', () => $('.fixed.inset-0').addClass('hidden'));
+        $(document).on('keydown', e => { if (e.key === 'Escape') $('.fixed.inset-0').addClass('hidden'); });
+        // Load data and render table
+        $.getJSON('data.json', data => {
+            $('#total-posts').text(data.length);
+            const tbody = $('#posts-table tbody').empty();
+            data.forEach(item => {
+                const d1 = new Date(item.criado_em.replace(/-/g, '/'));
+                const d2 = new Date(item.atualizado_em.replace(/-/g, '/'));
+                const row = `
+          <tr class="hover:bg-gray-100 dark:hover:bg-gray-700">
+            <td class="px-4 py-2">${item.perfil}</td>
+            <td class="px-4 py-2">${item.shortcode}</td>
+            <td class="px-4 py-2">${item.descricao.replace(/#\w+/g, '').trim()}</td>
+            <td class="px-4 py-2">${item.status}</td>
+            <td class="px-4 py-2">${item.hashtags.join(', ')}</td>
+            <td class="px-4 py-2">${d1.toLocaleDateString('pt-BR')} ${d1.toLocaleTimeString('pt-BR')}</td>
+            <td class="px-4 py-2">${d2.toLocaleDateString('pt-BR')} ${d2.toLocaleTimeString('pt-BR')}</td>
+            <td class="px-4 py-2 space-x-1">
+              <button class="px-2 py-1 bg-green-500 text-white rounded" onclick="window.open('${item.url_completa}','_blank')">Acessar</button>
+              <button class="px-2 py-1 bg-blue-500 text-white rounded copy-btn" data-url="${item.url_completa}">Copiar</button>
+            </td>
+          </tr>`;
+                tbody.append(row);
+            });
+            // Pagination
+            const perPage = parseInt($('#entries').val()); let currentPage = 1;
+            function renderPage() {
+                const total = data.length, pages = Math.ceil(total / perPage);
+                $('#pagination').empty();
+                for (let i = 1; i <= pages; i++) {
+                    const btn = $(`<button class="px-2 py-1 rounded ${i === currentPage ? 'bg-gray-300 dark:bg-gray-600' : ''}">${i}</button>`);
+                    btn.on('click', () => { currentPage = i; updateTable(); renderPage() });
+                    $('#pagination').append(btn);
+                }
+            }
+            function updateTable() {
+                $('#posts-table tbody tr').hide().slice((currentPage - 1) * perPage, currentPage * perPage).show();
+            }
+            $('#entries').on('change', () => { currentPage = 1; renderPage(); updateTable(); });
+            renderPage(); updateTable();
+            // Search
+            $('#search-btn').on('click', () => {
+                const term = $('#search-input').val().toLowerCase();
+                $('#posts-table tbody tr').each(function () {
+                    $(this).toggle($(this).text().toLowerCase().includes(term));
+                });
+            }); $('#search-input').on('keypress', e => { if (e.key === 'Enter') $('#search-btn').click(); });
+            // Copy handler
+            $('#posts-table').on('click', '.copy-btn', function () { navigator.clipboard.writeText($(this).data('url')); alert('URL copiada'); });
+        });
+    </script>
+</body>
+
+</html>
