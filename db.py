@@ -10,8 +10,8 @@ Fornece métodos para criar esquema, inserir/atualizar posts, inserir hashtags,
 vincular posts a hashtags e consultar por filtros e hashtag.
 """
 import sqlite3
-from sqlite3 import Connection
-from typing import List, Dict, Optional
+from sqlite3 import Connection, Row
+from typing import List, Dict, Optional, Any
 
 DB_FILE = "instagrab.db"
 
@@ -46,7 +46,11 @@ CREATE TABLE IF NOT EXISTS post_hashtags (
 '''
 
 class DB:
-    def __init__(self, db_file: str = DB_FILE):
+    """Classe para gerenciar a conexão e operações com o banco de dados SQLite."""
+    def __init__(self, db_file: str = DB_FILE) -> None:
+        """
+        Inicializa a conexão com o banco de dados e cria as tabelas se não existirem.
+        """
         self.conn: Connection = sqlite3.connect(db_file)
         self.conn.row_factory = sqlite3.Row
         self.init_db()
@@ -70,6 +74,7 @@ class DB:
         """
         Insere um post ou atualiza descrição/status se já existir.
         Retorna o post_id.
+        NOTA: A cláusula RETURNING requer SQLite versão 3.35.0+
         """
         cur = self.conn.cursor()
         cur.execute(
@@ -79,15 +84,20 @@ class DB:
             ON CONFLICT(perfil, shortcode) DO UPDATE SET
                 descricao = excluded.descricao,
                 status = excluded.status,
-                atualizado_em = CURRENT_TIMESTAMP;
+                atualizado_em = CURRENT_TIMESTAMP
+            RETURNING id;
             ''',
             (perfil, shortcode, url_completa, descricao, status)
         )
-        self.conn.commit()
-        # Busca o id do post
-        cur.execute('SELECT id FROM posts WHERE perfil=? AND shortcode=?', (perfil, shortcode))
+        # A cláusula RETURNING evita uma segunda consulta para buscar o ID.
         row = cur.fetchone()
-        return row['id'] if row else None  # type: ignore
+        self.conn.commit()
+        if not row:
+            # Fallback para versões mais antigas do SQLite, caso RETURNING não funcione
+            cur.execute('SELECT id FROM posts WHERE perfil=? AND shortcode=?', (perfil, shortcode))
+            row = cur.fetchone()
+
+        return row['id'] if row else -1
 
     def insert_hashtag(self, tag: str) -> int:
         """
@@ -98,7 +108,7 @@ class DB:
         self.conn.commit()
         cur.execute('SELECT id FROM hashtags WHERE tag=?', (tag.lower(),))
         row = cur.fetchone()
-        return row['id']  # type: ignore
+        return row['id'] if row else -1
 
     def link_post_hashtag(self, post_id: int, hashtag_id: int) -> None:
         """
@@ -116,7 +126,7 @@ class DB:
         perfil: Optional[str] = None,
         status: Optional[str] = None,
         descricao_like: Optional[str] = None
-    ) -> List[Dict]:
+    ) -> List[Dict[str, Any]]:
         """
         Retorna posts filtrados opcionalmente por perfil, status ou parte da descrição.
         """
@@ -132,13 +142,15 @@ class DB:
         if descricao_like:
             clauses.append('descricao LIKE ?')
             params.append(f'%{descricao_like}%')
+
         if clauses:
             sql += ' WHERE ' + ' AND '.join(clauses)
+
         sql += ' ORDER BY criado_em DESC'
         cur.execute(sql, params)
         return [dict(r) for r in cur.fetchall()]
 
-    def get_posts_by_hashtag(self, tag: str) -> List[Dict]:
+    def get_posts_by_hashtag(self, tag: str) -> List[Dict[str, Any]]:
         """
         Retorna posts associados a uma hashtag específica.
         """
@@ -154,3 +166,7 @@ class DB:
             (tag.lower(),)
         )
         return [dict(r) for r in cur.fetchall()]
+
+    def close(self) -> None:
+        """Fecha a conexão com o banco de dados."""
+        self.conn.close()
